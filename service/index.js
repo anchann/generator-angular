@@ -1,8 +1,6 @@
 'use strict';
-var path = require('path');
 var util = require('util');
 var ScriptBase = require('../script-base.js');
-var angularUtils = require('../util.js');
 
 
 module.exports = Generator;
@@ -25,12 +23,10 @@ function Generator(args, options) {
 util.inherits(Generator, ScriptBase);
 
 Generator.prototype.createServiceFiles = function createServiceFiles() {
-  if (!this.options.typescript) {
-    this.appTemplate('service/service');
-    this.testTemplate('spec/service');
-  }
-  else {
-    this.appTemplate('service/service', {addScriptToIndex: false});
-    this.testTemplate('spec/service', {scriptSuffix: '.js'});
-  }
+  this.generateSourceAndTest(
+    'service/service',
+    'spec/service',
+    'services',
+    this.options['skip-add'] || false
+  );
 };

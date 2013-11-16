@@ -4,9 +4,7 @@ var path = require('path');
 var yeoman = require('yeoman-generator');
 var angularUtils = require('./util.js');
 
-module.exports = Generator;
-
-function Generator() {
+var Generator = module.exports = function Generator() {
   yeoman.generators.NamedBase.apply(this, arguments);
 
   try {
@@ -14,6 +12,11 @@ function Generator() {
   } catch (e) {
     this.appname = path.basename(process.cwd());
   }
+  this.appname = this._.slugify(this._.humanize(this.appname));
+  this.scriptAppName = this._.camelize(this.appname) + angularUtils.appName(this);
+
+  this.cameledName = this._.camelize(this.name);
+  this.classedName = this._.classify(this.name);
 
   if (typeof this.env.options.appPath === 'undefined') {
     try {
@@ -31,6 +34,7 @@ function Generator() {
 
   var pkg = JSON.parse(this.readFileAsString(path.join(process.cwd(), 'package.json')));
 
+  this.env.options.coffee = this.options.coffee;
   if (typeof this.env.options.coffee === 'undefined') {
     this.option('coffee');
 
@@ -87,18 +91,7 @@ function Generator() {
   }
 
   this.sourceRoot(path.join(__dirname, sourceRoot));
-
-  this.moduleName = this._.camelize(this.appname) + 'App';
-
-  this.namespace = [];
-  if (this.name.indexOf('/') !== -1) {
-    this.namespace = this.name.split('/');
-    this.name = this.namespace.pop();
-
-    this.moduleName += '.' + this.namespace.join('.'); // add to parent ?
-  }
-
-}
+};
 
 util.inherits(Generator, yeoman.generators.NamedBase);
 
@@ -133,14 +126,14 @@ Generator.prototype.testTemplate = function (src, options) {
   ]);
 };
 
-Generator.prototype.htmlTemplate = function (src) {
+Generator.prototype.htmlTemplate = function (src, dest) {
   yeoman.generators.Base.prototype.template.apply(this, [
     src,
-    path.join(this.env.options.appPath, this._dest(src))
+    path.join(this.env.options.appPath, dest)
   ]);
 };
 
-Generator.prototype.addScriptToIndex = function (src) {
+Generator.prototype.addScriptToIndex = function (script) {
   try {
     var appPath = this.env.options.appPath;
     var fullPath = path.join(appPath, 'index.html');
@@ -148,10 +141,18 @@ Generator.prototype.addScriptToIndex = function (src) {
       file: fullPath,
       needle: '<!-- endbuild -->',
       splicable: [
-        '<script src="' + this._dest(src) + '.js"></script>'
+        '<script src="scripts/' + script + '.js"></script>'
       ]
     });
   } catch (e) {
-    console.log('\nUnable to find '.yellow + fullPath + '. Reference to '.yellow + this._dest(src) + '.js ' + 'not added.\n'.yellow);
+    console.log('\nUnable to find '.yellow + fullPath + '. Reference to '.yellow + script + '.js ' + 'not added.\n'.yellow);
+  }
+};
+
+Generator.prototype.generateSourceAndTest = function (appTemplate, testTemplate, targetDirectory, skipAdd) {
+  this.appTemplate(appTemplate, path.join('scripts', targetDirectory, this.name));
+  this.testTemplate(testTemplate, path.join(targetDirectory, this.name));
+  if (!skipAdd) {
+    this.addScriptToIndex(path.join(targetDirectory, this.name));
   }
 };

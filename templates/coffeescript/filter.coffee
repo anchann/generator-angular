@@ -1,6 +1,6 @@
-'use strict';
+'use strict'
 
-angular.module('<%= moduleName %>')
-  .filter '<%= _.camelize(name) %>', () ->
+angular.module('<%= scriptAppName %>')
+  .filter '<%= cameledName %>', () ->
     (input) ->
-      '<%= _.camelize(name) %> filter: ' + input
+      '<%= cameledName %> filter: ' + input

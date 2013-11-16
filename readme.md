@@ -32,6 +32,10 @@ Available generators:
 * [angular:filter](#filter)
 * [angular:route](#route)
 * [angular:service](#service)
+* [angular:provider](#service)
+* [angular:factory](#service)
+* [angular:value](#service)
+* [angular:constant](#service)
 * [angular:decorator] (#decorator)
 * [angular:view](#view)
 
@@ -184,8 +188,11 @@ angular.module('myMod')
 
 A project can mix CoffeScript and JavaScript files.
 
+To output JavaScript files, even if CoffeeScript files exist (the default is to output CoffeeScript files if 
+the generator finds any in the project), use `--coffee=false`.
+
 ### Minification Safe
-By default, generators produce unannotated code. Without annotations, AngularJS's DI system will break when minified. Typically, these annotations the make minification safe are added automatically at build-time, after application files are concatenated, but before they are minified. By providing the `--minsafe` option, the code generated will out-of-the-box be ready for minification. The trade-off is between amount of boilerplate, and build process complexity.
+By default, generators produce unannotated code. Without annotations, AngularJS's DI system will break when minified. Typically, these annotations that make minification safe are added automatically at build-time, after application files are concatenated, but before they are minified. By providing the `--minsafe` option, the code generated will out-of-the-box be ready for minification. The trade-off is between amount of boilerplate, and build process complexity.
 
 #### Example
 ```bash
@@ -219,6 +226,18 @@ angular.module('myMod').controller('MyCtrl',
 The annotations are important because minified code will rename variables, making it impossible for AngularJS to infer module names based solely on function parameters.
 
 The recommended build process uses `ngmin`, a tool that automatically adds these annotations. However, if you'd rather not use `ngmin`, you have to add these annotations manually yourself.
+
+### Add to Index
+By default, new scripts are added to the index.html file. However, this may not always be suitable. Some use cases:
+
+* Manually added to the file
+* Auto-added by a 3rd party plugin
+* Using this generator as a subgenerator
+
+To skip adding them to the index, pass in the skip-add argument:
+```bash
+yo angular:service serviceName --skip-add
+```
 
 ## Bower Components
 
@@ -257,16 +276,7 @@ This will cause Yeoman-generated client-side files to be placed in `public`.
 
 ## Testing
 
-For tests to work properly, karma needs the `angular-mocks` bower package.
-This script is included in the bower.json in the `devDependencies` section, which will
-be available very soon, probably with the next minor release of bower.
-
-While bower `devDependencies` are not yet implemented, you can fix it by running:
-```bash
-bower install angular-mocks
-```
-
-By running `grunt test` you should now be able to run your unit tests with karma.
+Running `grunt test` will run the unit tests with karma.
 
 ## Contribute
 
