@@ -331,7 +331,7 @@ Generator.prototype.bootstrapFiles = function bootstrapFiles() {
     sourceFileList: files.map(function (file) {
       return 'styles/' + file.replace('.scss', '.css');
     }),
-    searchPath: '.tmp'
+    searchPath: ['.tmp', 'app']
   });
 };
 
@@ -402,3 +402,8 @@ Generator.prototype.packageFiles = function () {
   this.template('../../templates/common/_package.json', 'package.json');
   this.template('../../templates/common/Gruntfile.js', 'Gruntfile.js');
 };
+
+Generator.prototype.imageFiles = function () {
+  this.sourceRoot(path.join(__dirname, 'templates'));
+  this.directory('images', 'app/images', true);
+}
