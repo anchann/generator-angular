@@ -1,7 +1,7 @@
 'use strict'
 
-angular.module('<%= moduleName %>')
-  .controller '<%= _.classify(name) %>Ctrl', ($scope) ->
+angular.module('<%= scriptAppName %>')
+  .controller '<%= classedName %>Ctrl', ($scope) ->
     $scope.awesomeThings = [
       'HTML5 Boilerplate'
       'AngularJS'

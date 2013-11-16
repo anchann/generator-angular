@@ -1,6 +1,6 @@
 'use strict';
 
-angular.module('<%= moduleName %>', [])
+angular.module('<%= scriptAppName %>', [<%= angularModules %>])
   .config(function ($routeProvider) {
     $routeProvider
       .when('/', {

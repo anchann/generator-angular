@@ -1,7 +1,7 @@
-'use strict';
+'use strict'
 
-angular.module('<%= moduleName %>')
-  .factory '<%= _.camelize(name) %>', [() ->
+angular.module('<%= scriptAppName %>')
+  .factory '<%= cameledName %>', [() ->
     # Service logic
     # ...
 
@@ -10,6 +10,6 @@ angular.module('<%= moduleName %>')
     # Public API here
     {
       someMethod: () ->
-        meaningOfLife;
+        meaningOfLife
     }
   ]

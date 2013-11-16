@@ -4,9 +4,7 @@ var path = require('path');
 var yeoman = require('yeoman-generator');
 var angularUtils = require('./util.js');
 
-module.exports = Generator;
-
-function Generator() {
+var Generator = module.exports = function Generator() {
   yeoman.generators.NamedBase.apply(this, arguments);
 
   try {
@@ -14,6 +12,11 @@ function Generator() {
   } catch (e) {
     this.appname = path.basename(process.cwd());
   }
+  this.appname = this._.slugify(this._.humanize(this.appname));
+  this.scriptAppName = this._.camelize(this.appname) + angularUtils.appName(this);
+
+  this.cameledName = this._.camelize(this.name);
+  this.classedName = this._.classify(this.name);
 
   if (typeof this.env.options.appPath === 'undefined') {
     try {
@@ -29,17 +32,39 @@ function Generator() {
     this.env.options.testPath = this.env.options.testPath || 'test/spec';
   }
 
+  var pkg = JSON.parse(this.readFileAsString(path.join(process.cwd(), 'package.json')));
+
+  this.env.options.coffee = this.options.coffee;
   if (typeof this.env.options.coffee === 'undefined') {
     this.option('coffee');
 
     // attempt to detect if user is using CS or not
     // if cml arg provided, use that; else look for the existence of cs
     if (!this.options.coffee &&
+      // TODO check pkg["yo-language"] === "coffee"
       this.expandFiles(path.join(this.env.options.appPath, '/scripts/**/*.coffee'), {}).length > 0) {
       this.options.coffee = true;
     }
 
     this.env.options.coffee = this.options.coffee;
+  }
+
+  if (typeof this.env.options.typescript === 'undefined') {
+    this.option('typescript');
+
+    // attempt to detect if user is using typescript or not
+    // if cml arg provided, use that; else look for yo-language in package.json
+    if (!this.options.typescript && pkg["yo-language"] === "typescript") {
+      this.options.typescript = true;
+    }
+
+    this.env.options.typescript = this.options.typescript;
+
+    if (this.options.typescript) {
+      if (pkg["yo-typescript-appName"]) {
+        this.env.options.typescriptAppName = this.options.typescriptAppName = pkg["yo-typescript-appName"];
+      }
+    }
   }
 
   if (typeof this.env.options.minsafe === 'undefined') {
@@ -59,19 +84,14 @@ function Generator() {
     sourceRoot += '-min';
   }
 
-  this.sourceRoot(path.join(__dirname, sourceRoot));
-
-  this.moduleName = this._.camelize(this.appname) + 'App';
-
-  this.namespace = [];
-  if (this.name.indexOf('/') !== -1) {
-    this.namespace = this.name.split('/');
-    this.name = this.namespace.pop();
-
-    this.moduleName += '.' + this.namespace.join('.'); // add to parent ?
+  // for now, no min-safe option for typescript, hence the ordering of these if blocks
+  if (this.env.options.typescript) {
+    sourceRoot = '/templates/typescript';
+    this.scriptSuffix = '.ts';
   }
 
-}
+  this.sourceRoot(path.join(__dirname, sourceRoot));
+};
 
 util.inherits(Generator, yeoman.generators.NamedBase);
 
@@ -84,29 +104,36 @@ Generator.prototype._dest = function (src) {
   return path.join((this.namespace.join('/') || src), this.name);
 };
 
-Generator.prototype.appTemplate = function (src) {
+Generator.prototype.appTemplate = function (src, options) {
+  options = options || {};
+  var scriptSuffix = options.scriptSuffix || this.scriptSuffix;
+
   yeoman.generators.Base.prototype.template.apply(this, [
-    src + this.scriptSuffix,
-    path.join(this.env.options.appPath, this._dest(src)) + this.scriptSuffix
+    src + scriptSuffix,
+    path.join(this.env.options.appPath, this._dest(src)) + scriptSuffix
   ]);
-  this.addScriptToIndex(src);
+
+  if (options.addScriptToIndex !== false) this.addScriptToIndex(src);
 };
 
-Generator.prototype.testTemplate = function (src) {
+Generator.prototype.testTemplate = function (src, options) {
+  options = options || {};
+  var scriptSuffix = options.scriptSuffix || this.scriptSuffix;
+
   yeoman.generators.Base.prototype.template.apply(this, [
-    src + this.scriptSuffix,
-    path.join(this.env.options.testPath, this._dest(src)) + this.scriptSuffix
+    src + scriptSuffix,
+    path.join(this.env.options.testPath, this._dest(src)) + scriptSuffix
   ]);
 };
 
-Generator.prototype.htmlTemplate = function (src) {
+Generator.prototype.htmlTemplate = function (src, dest) {
   yeoman.generators.Base.prototype.template.apply(this, [
     src,
-    path.join(this.env.options.appPath, this._dest(src))
+    path.join(this.env.options.appPath, dest)
   ]);
 };
 
-Generator.prototype.addScriptToIndex = function (src) {
+Generator.prototype.addScriptToIndex = function (script) {
   try {
     var appPath = this.env.options.appPath;
     var fullPath = path.join(appPath, 'index.html');
@@ -114,10 +141,18 @@ Generator.prototype.addScriptToIndex = function (src) {
       file: fullPath,
       needle: '<!-- endbuild -->',
       splicable: [
-        '<script src="' + this._dest(src) + '.js"></script>'
+        '<script src="scripts/' + script.replace('\\', '/') + '.js"></script>'
       ]
     });
   } catch (e) {
-    console.log('\nUnable to find '.yellow + fullPath + '. Reference to '.yellow + this._dest(src) + '.js ' + 'not added.\n'.yellow);
+    console.log('\nUnable to find '.yellow + fullPath + '. Reference to '.yellow + script + '.js ' + 'not added.\n'.yellow);
+  }
+};
+
+Generator.prototype.generateSourceAndTest = function (appTemplate, testTemplate, targetDirectory, skipAdd) {
+  this.appTemplate(appTemplate, path.join('scripts', targetDirectory, this.name));
+  this.testTemplate(testTemplate, path.join(targetDirectory, this.name));
+  if (!skipAdd) {
+    this.addScriptToIndex(path.join(targetDirectory, this.name));
   }
 };

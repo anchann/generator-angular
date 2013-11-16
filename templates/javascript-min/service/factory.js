@@ -1,7 +1,7 @@
 'use strict';
 
-angular.module('<%= moduleName %>')
-  .factory('<%= _.camelize(name) %>', [function() {
+angular.module('<%= scriptAppName %>')
+  .factory('<%= cameledName %>', [function() {
     // Service logic
     // ...
 
